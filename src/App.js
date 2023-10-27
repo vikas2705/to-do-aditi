@@ -10,14 +10,18 @@ function App() {
   const itemsLength = 100;
   const [skip, setSkip] = useState(0);
 
-  const handleSavedData = () => {
+  useEffect(() => {
     const savedData = JSON.parse(localStorage.getItem("savedListItems"));
-    if (savedData) {
+    if (savedData) {      
       setTodoList(savedData);
-    } else {
-      localStorage.setItem("savedListItems", JSON.stringify(todoList));
+    }else{
+      handleApi();
     }
-  };
+  }, [skip]);
+
+  // useEffect(() => {
+  //   handleSavedData();
+  // }, []);
 
   const handleApi = () => {
     axios
@@ -25,6 +29,9 @@ function App() {
       .then((res) => {
         const listItems = res.data.todos;
         setTodoList((prev) => {
+          const data = [ ...listItems];
+          console.log("previous data", data);
+          handleSavedData(data);
           return [...prev, ...listItems];
         });
         setItemsCount((prev) => prev + listItems.length);
@@ -32,49 +39,68 @@ function App() {
       .catch((error) => console.log(error));
   };
 
-  useEffect(() => {
-    // handleSavedData();
-    handleApi();
-  }, [skip]);
+  const handleSavedData = (data) => {
+    const savedData = JSON.parse(localStorage.getItem("savedListItems"));
+    if (savedData) {
+      // setTodoList(data)
+      // setTodoList(savedData);
+      
+      localStorage.setItem("savedListItems",JSON.stringify([...savedData, ...data]));
+      // setTodoList(savedData);
+    }
+     else {
+      localStorage.setItem("savedListItems",JSON.stringify(data));
+    }
+  };
 
   const addItem = () => {
     const value = inputRef.current.value;
-    console.log(value);
     if (value === "") return;
     setTodoList((prev) => {
-      console.log(value);
       // const x = [...prev, { todo: value}];
-      return[...prev, { todo: value }];
+      // handleSavedData()
+      return [...prev, { todo: value, id: new Date().getTime() }];
     });
     setItemsCount((prev) => prev + 1);
     inputRef.current.value = "";
   };
 
   return (
-    <div>
-      <h1>To Do </h1>
+    <div className="main-body">
+      <h1>To Do List</h1>
       <h2>Total items: {itemsCount}</h2>
       <div className="search-bar-div">
-        <input type="text" placeholder="enter list item" ref={inputRef}></input>
+        <input
+          type="text"
+          placeholder="enter list item"
+          ref={inputRef}
+          className="input-box"
+        ></input>
         <button className="add-button" onClick={addItem}>
-          ADD
+          +
         </button>
       </div>
       <ul>
         {todoList.map((item, index) => {
           return (
-            <li className="list-item" key={index}>
-              {item.todo}
-              <button>Delete</button>
-              <hr />
+            <li className="list-item" key={item.id}>
+              <div style={{ paddingBottom: "3px" }} className="item-text">
+                {item.todo}
+              </div>
+              <span className="li-buttons-container">
+                <button className="li-button">Edit</button>
+                <button className="li-button">Delete</button>
+              </span>
             </li>
           );
         })}
       </ul>
       {itemsCount < itemsLength && (
-        <button className="load-button" onClick={() => setSkip(skip + 20)}>
-          Load More
-        </button>
+        <div style={{ textAlign: "center", margin: "15px" }}>
+          <button className="load-button" onClick={() => setSkip(skip + 20)}>
+            Load More
+          </button>
+        </div>
       )}
     </div>
   );
